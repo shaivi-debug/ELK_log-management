@@ -1,0 +1,48 @@
+filebeat.inputs:
+
+## Catalina logs
+- type: log
+  enabled: true
+  paths:
+    - /opt/tomcat/logs/catalina.out
+  fields:
+    codec: plain
+    type: catalina_log
+
+## Accesslogs
+- type: log
+  enabled: true
+  paths:
+    - /opt/tomcat/logs/localhost_access_log.*.txt
+  fields:
+    codec: plain
+    type: access_log
+
+filebeat.config.modules.path: /etc/filebeat/modules.d/*.yml
+
+##Defining an elasticsearch output.
+##For more options on ES output, refer to the documentation at
+##https://www.elastic.co/guide/en/beats/filebeat/current/elasticsearch-output.html
+output.elasticsearch:
+  hosts: [192.168.1.2:9200]
+  username: "elastic"
+  password: "9DD67VH46DA8avaG9o7u"
+##By default, filebeat will send everything to the filebeat-7.9.2-<YYYY.MM.DD>-000001
+##Because we are shipping three different types of logs, it makes more sense to send them to different indices.
+##We will be splitting our indices based on the field type we set while processing the logs
+  indices:
+- index: "tomcat-catalina-logs-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.type: "catalina_log"
+   #- index: "tomcat-localhost-logs-%{+yyyy.MM.dd}"
+      #when.equals:
+        #fields.type: "localhost_log"
+    - index: "tomcat-access-logs-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.type: "access_log"
+
+##The following lines are needed in order to set up different indices
+setup.ilm.enabled: false
+
+setup.template.name: "tomcat"
+setup.template.pattern: "tomcat-*"
