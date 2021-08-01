@@ -1,0 +1,29 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /opt/wildfly/standalone/log/server.log
+  fields:
+    codec: plain
+    type: wildfly_log
+
+filebeat.config.modules.path: /etc/filebeat/modules.d/*.yml
+
+
+output.elasticsearch:
+  enabled: true
+  hosts: ["192.168.1.2:9200"]
+  protocol: "http"
+  username: "elastic"
+  password: "9DD67VH46DA8avaG9o7u"
+  indices:
+    - index: "wildfly-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.type: "wildfly_log"
+  pipeline: "wildfly-pipeline-log"
+
+
+setup.template.enabled: true
+setup.template.name: "wildfly"
+setup.template.pattern: "wildfly-*"
+
